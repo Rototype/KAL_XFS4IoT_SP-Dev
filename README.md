@@ -1,4 +1,7 @@
-# KAL-XFS4IoT-SP-Dev
+# XFS4IoT-SP-Dev
+
+Rototype created a fork of the original KAL project to add some proprietary extensions and test the applicability of the framework to Ticketing machines.
+Moreover Rototype had the need to fix some issues with the printers with fast fixing cycle. 
 
 KAL's XFS4IoT SP-Dev is an open source implementation of the revolutionary new XFS version 4 global standard. It is ready for the IoT era and paves the way for a cloud-based, secure, OS-agnostic ATM industry.
 
@@ -12,7 +15,7 @@ Sample code is available in the [KAL_XFS4IoT_SP-Dev-Samples repo](https://github
 
 ## Building the XFS4IoT_SP-Dev Framework
 
-1. Clone KAL_XFS4IoT_SP-Dev repository from https://github.com/KAL-ATM-Software/KAL_XFS4IoT_SP-Dev.
+1. Clone XFS4IoT_SP-Dev repository
 2. Install Visual Studio 2022 and .Net6 SDK or runtime.
 3. Open the solution `Framework/SPFramework.sln` in Visual Studio 2022.
 4. Select Solution SPFramework in the solution explorer and execute Clean Solution.
