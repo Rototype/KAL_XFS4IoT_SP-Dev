@@ -18,6 +18,50 @@ namespace XFS4IoTFramework.BarcodeReader
 {
     /// The classes used by the device interface for an Input/Output parameters
 
+
+    /// <summary>
+    /// SendFileRequest
+    /// Data to write a file to the device
+    /// </summary>
+    public sealed class SendFileRequest
+    {
+    
+        public SendFileRequest(string Filename,string Value, int Timeout)
+        {
+            this.Filename = Filename;
+            this.Value = Value;
+            this.Timeout = Timeout;
+        }
+        
+        public string Filename {get; init;}
+        public string Value {get; init;}
+        public int Timeout { get; init; }   
+    }
+    
+    
+    public sealed class SendFileResult : DeviceResult
+    {
+        public SendFileResult(MessagePayload.CompletionCodeEnum CompletionCode,
+                          string ErrorDescription = null,
+                          ErrorCodeEnum? ErrorCode = null)
+            : base(CompletionCode, ErrorDescription)
+        {
+            this.ErrorCode = ErrorCode;
+        }
+
+        public enum ErrorCodeEnum
+        {
+            WriteError
+        }
+
+        /// <summary>
+        /// Specifies the error code on writing file
+        /// </summary>
+        public ErrorCodeEnum? ErrorCode { get; init; }
+
+    }
+
+
     /// <summary>
     /// ReadRequest
     /// Information contains to perform operation for reading barcode data

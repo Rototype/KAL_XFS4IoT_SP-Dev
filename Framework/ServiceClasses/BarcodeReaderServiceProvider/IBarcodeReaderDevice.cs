@@ -15,6 +15,13 @@ namespace XFS4IoTFramework.BarcodeReader
 {
     public interface IBarcodeReaderDevice : IDevice
     {
+    
+        /// <summary>
+        /// This command sends a file to the device and reports result
+        /// </summary>
+        Task<SendFileResult> SendFile(SendFileRequest request,
+                              CancellationToken cancellation);
+                              
         /// <summary>
         /// This command enables the barcode reader.
         /// The barcode reader will scan for barcodes and when it successfully manages to read one or more barcodes the command will complete.
