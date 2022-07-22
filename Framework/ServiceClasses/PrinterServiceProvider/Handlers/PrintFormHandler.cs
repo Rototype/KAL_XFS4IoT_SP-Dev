@@ -36,9 +36,9 @@ namespace XFS4IoTFramework.Printer
             }
 
             // Check form device supported
-            Form form = forms[printForm.Payload.FormName]; 
+            Form form = forms[printForm.Payload.FormName];
             FormRules rules = Device.FormRules;
-            if (rules.RowColumnOnly && 
+            if (rules.RowColumnOnly &&
                 form.Base != Form.BaseEnum.ROWCOLUMN)
             {
                 return new PrintFormCompletion.PayloadData(MessagePayload.CompletionCodeEnum.CommandErrorCode,
@@ -88,10 +88,15 @@ namespace XFS4IoTFramework.Printer
                 }
             }
 
+            Dictionary<string, List<int>> GroupedNames = new();
+            Dictionary<string, string> TrimmedPayloadFields = new();
             // Index field check
             int elementNumber = -1;
+
             foreach (var fieldName in printForm.Payload.Fields)
             {
+
+
                 int separator = fieldName.Key.IndexOf('[');
                 if (separator != -1 &&
                     fieldName.Key[separator] == '[')
@@ -109,10 +114,17 @@ namespace XFS4IoTFramework.Printer
                                                                    $"Invalid field assignment: expected <name>[nnn]=<value>. {fieldName.Key} {printForm.Payload.FormName}",
                                                                    PrintFormCompletion.PayloadData.ErrorCodeEnum.FieldSpecFailure);
                     }
+                    string GroupKey = fieldName.Key[..separator].Trim();
+                    if (!GroupedNames.ContainsKey(GroupKey))
+                        GroupedNames.Add(GroupKey, new() { elementNumber });
+                    else
+                        GroupedNames[GroupKey].Add(elementNumber);
+                    TrimmedPayloadFields.Add($"{GroupKey}[{elementNumber}]", fieldName.Value);
                 }
             }
 
-            foreach (var fieldName in printForm.Payload.Fields)
+            //foreach (var fieldName in printForm.Payload.Fields)
+            foreach (var fieldName in GroupedNames)
             {
                 if (!form.Fields.ContainsKey(fieldName.Key))
                 {
@@ -252,8 +264,13 @@ namespace XFS4IoTFramework.Printer
             // REQUIRED fields have assignments, creating assignments for
             // STATIC fields and filling in OPTIONAL field assignments.
             List<FieldAssignment> fieldAssignments = new();
+
+
+
             foreach (var field in form.Fields)
             {
+
+
                 // If STATIC field, just add a new assignment for the INITIALVALUE
                 if (field.Value.Class == FormField.ClassEnum.STATIC)
                 {
@@ -278,6 +295,19 @@ namespace XFS4IoTFramework.Printer
                 // If REQUIRED, just check there is already an assignment for the field.
                 if (field.Value.Class == FormField.ClassEnum.REQUIRED)
                 {
+
+                    for (int i = 0; i != field.Value.Repeat; i++)
+                    {
+                        var BuiltName = $"{field.Value.Name}[{i}]";
+                        if (TrimmedPayloadFields.TryGetValue(BuiltName, out string FieldValue))
+                        {
+                            FieldAssignment fieldAssignment = new(field.Value, FieldValue);
+                            fieldAssignment.ElementIndex = i;
+                            fieldAssignments.Add(fieldAssignment);
+                        }
+                    }
+
+
                     // For index fields, all elements must be assigned: count how many there are in the list.
                     int NoExpectedAssignments = (field.Value.Repeat > 0) ? field.Value.Repeat : 1;
                     foreach (var fieldAssignment in fieldAssignments)
@@ -295,33 +325,21 @@ namespace XFS4IoTFramework.Printer
                     continue;
                 }
 
-                // Must be an OPTIONAL field: fill in any missing assignments with the
-                // INITIALVALUE if there is one.
-                (field.Value.Class == FormField.ClassEnum.OPTIONAL).IsTrue($"Unexpected class type received. {field.Value.Class}");
+            // Must be an OPTIONAL field: fill in any missing assignments with the
+            // INITIALVALUE if there is one.
+            (field.Value.Class == FormField.ClassEnum.OPTIONAL).IsTrue($"Unexpected class type received. {field.Value.Class}");
 
-                if (string.IsNullOrEmpty(field.Value.InitialValue))
+          
+                for (int i = 0; i != field.Value.Repeat; i++)
                 {
-                    continue;
-                }
-
-                FieldAssignment assignment = new (field.Value, (field.Value.Repeat > 0) ? 0 : -1, field.Value.InitialValue);
-
-                for (; assignment.ElementIndex < field.Value.Repeat; assignment.ElementIndex++)
-                {
-                    // If this assignment isn't already in there, add it.
-                    int i = 0;
-                    for (; i < fieldAssignments.Count; i++)
+                    var BuiltName = $"{field.Value.Name}[{i}]";
+                    if (!TrimmedPayloadFields.TryGetValue(BuiltName, out string FieldValue))
                     {
-                        if (fieldAssignments[i].Field == assignment.Field &&
-                            fieldAssignments[i].ElementIndex == assignment.ElementIndex)
-                        {
-                            break;
-                        }
+                        FieldValue = field.Value.InitialValue;  // assign a default if not set by user
                     }
-                    if (i == fieldAssignments.Count)
-                    {
-                        fieldAssignments.Add(assignment);
-                    }
+                    FieldAssignment fieldAssignment = new(field.Value, FieldValue);
+                    fieldAssignment.ElementIndex = i;
+                    fieldAssignments.Add(fieldAssignment);
                 }
             }
 
@@ -526,8 +544,8 @@ namespace XFS4IoTFramework.Printer
         /// <summary>
         /// Execute control media after form prining completed successfully
         /// </summary>
-        private async Task<PrintFormCompletion.PayloadData> ExecuteControlMedia(IPrintFormEvents events, 
-                                                                                PrintFormCommand.PayloadData payload, 
+        private async Task<PrintFormCompletion.PayloadData> ExecuteControlMedia(IPrintFormEvents events,
+                                                                                PrintFormCommand.PayloadData payload,
                                                                                 CancellationToken cancel)
         {
             PrinterCapabilitiesClass.ControlEnum controls = PrinterCapabilitiesClass.ControlEnum.NotSupported;
@@ -833,7 +851,7 @@ namespace XFS4IoTFramework.Printer
         private PrintFormResult CheckFieldValid(FormField field, Form form)
         {
             FormRules rules = Device.FormRules;
-           
+
             // Check the field is entirely inside the form
             // Do this using printer units not dots: otherwise rounding may cause
             // us to reject valid forms.
@@ -943,7 +961,7 @@ namespace XFS4IoTFramework.Printer
                                                $"COLOR is not valid.",
                                                PrintFormCompletion.PayloadData.ErrorCodeEnum.FieldError);
             }
-            
+
             // Check FONT
             if (rules.ValidFonts != "ALL")
             {
@@ -991,7 +1009,7 @@ namespace XFS4IoTFramework.Printer
                 Logger.Warning(Constants.Framework, $"INITIALVALUE for REQUIRED field ignored. {field.Name}");
             }
 
-            if (field.Class == FormField.ClassEnum.STATIC && 
+            if (field.Class == FormField.ClassEnum.STATIC &&
                 string.IsNullOrEmpty(field.InitialValue))
             {
                 Logger.Warning(Constants.Framework, $"INITIALVALUE for STATIC field. {field.Name}");
@@ -1623,7 +1641,7 @@ namespace XFS4IoTFramework.Printer
                         {
                             unjustifiedTasks.Add(new TextTask(task));
                         }
-                        TextTask T = new (tasks[^1]);
+                        TextTask T = new(tasks[^1]);
                         tasks.Clear();
                         tasks.Add(T);
 
@@ -1708,7 +1726,7 @@ namespace XFS4IoTFramework.Printer
             // in one task.
             if (NWords < 2)
             {
-                TextTask NewTask = new (task);
+                TextTask NewTask = new(task);
                 NewTask.Text = AllText;
                 tasks.Add(NewTask);
                 return new PrintFormResult(MessagePayload.CompletionCodeEnum.Success);
@@ -1778,12 +1796,12 @@ namespace XFS4IoTFramework.Printer
         /// <param name="overflow">Output, whether an overflow occurred</param>
         /// <param name="requiredLines">Output for required lines</param>
         /// <param name="tasks">Tasks to be processed</param>
-        private PrintFormResult BreakTextIntoLines(bool chop, 
+        private PrintFormResult BreakTextIntoLines(bool chop,
                                                    FieldAssignment fieldAssignment,
                                                    Form form,
-                                                   int maxLines, 
-                                                   out bool overflow, 
-                                                   out int requiredLines, 
+                                                   int maxLines,
+                                                   out bool overflow,
+                                                   out int requiredLines,
                                                    List<TextTask> tasks)
         {
             // Initialise no overflow
@@ -1892,7 +1910,7 @@ namespace XFS4IoTFramework.Printer
 
                 if (!chop)
                 {
-                    while (Index < Text.Length && (Text[Index] is ' ' or '\t')) 
+                    while (Index < Text.Length && (Text[Index] is ' ' or '\t'))
                         Index++;
                     // Note: TrimLeft removes newlines which we don't want to do
                 }
@@ -1909,7 +1927,7 @@ namespace XFS4IoTFramework.Printer
 
                 if (!chop)
                 {
-                    while (Index < Text.Length && (Text[Index] is ' ' or '\t')) 
+                    while (Index < Text.Length && (Text[Index] is ' ' or '\t'))
                         Index++;
                     // Note: TrimLeft removes newlines which we don't want to do
                 }
@@ -2122,7 +2140,7 @@ namespace XFS4IoTFramework.Printer
                             fieldAssignment.Field.Font,
                             fieldAssignment.Width,
                             fieldAssignment.Height);
-           
+
             // Add the task to the task manager.
             Printer.PrintJob.Tasks.Add(task);
 
@@ -2134,7 +2152,7 @@ namespace XFS4IoTFramework.Printer
         /// </summary>
         private PrintFormResult ConvertGraphicFieldAssignment(FieldAssignment fieldAssignment)
         {
-            GraphicTask task = new (fieldAssignment.X,
+            GraphicTask task = new(fieldAssignment.X,
                                     fieldAssignment.Y,
                                     fieldAssignment.Width,
                                     fieldAssignment.Height,
