@@ -347,9 +347,13 @@ namespace XFS4IoTFramework.Printer
                         {
                             FieldValue = field.Value.InitialValue;  // assign a default if not set by user
                         }
-                        FieldAssignment fieldAssignment = new(field.Value, FieldValue);
-                        fieldAssignment.ElementIndex = i;
-                        fieldAssignments.Add(fieldAssignment);
+                        if (!string.IsNullOrEmpty(FieldValue)) // do create fieldAssignment on null or empty field (used by FOLLOWS)
+                        {
+
+                            FieldAssignment fieldAssignment = new(field.Value, FieldValue);
+                            fieldAssignment.ElementIndex = i;
+                            fieldAssignments.Add(fieldAssignment);
+                        }
                     }
                 } else
                 {
