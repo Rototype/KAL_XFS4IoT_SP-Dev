@@ -120,7 +120,15 @@ namespace XFS4IoTFramework.Printer
                     else
                         GroupedNames[GroupKey].Add(elementNumber);
                     TrimmedPayloadFields.Add($"{GroupKey}[{elementNumber}]", fieldName.Value);
-                }
+                } else
+                {
+                    string GroupKey = fieldName.Key.Trim();
+                    if (!GroupedNames.ContainsKey(GroupKey))
+                    {
+                        GroupedNames.Add(GroupKey, new() { 1 });
+                        TrimmedPayloadFields.Add(GroupKey, fieldName.Value);
+                    }
+            }
             }
 
             //foreach (var fieldName in printForm.Payload.Fields)
@@ -329,16 +337,29 @@ namespace XFS4IoTFramework.Printer
             // INITIALVALUE if there is one.
             (field.Value.Class == FormField.ClassEnum.OPTIONAL).IsTrue($"Unexpected class type received. {field.Value.Class}");
 
-          
-                for (int i = 0; i != field.Value.Repeat; i++)
+                if (field.Value.Repeat > 0)
                 {
-                    var BuiltName = $"{field.Value.Name}[{i}]";
+
+                    for (int i = 0; i != field.Value.Repeat; i++)
+                    {
+                        var BuiltName = $"{field.Value.Name}[{i}]";
+                        if (!TrimmedPayloadFields.TryGetValue(BuiltName, out string FieldValue))
+                        {
+                            FieldValue = field.Value.InitialValue;  // assign a default if not set by user
+                        }
+                        FieldAssignment fieldAssignment = new(field.Value, FieldValue);
+                        fieldAssignment.ElementIndex = i;
+                        fieldAssignments.Add(fieldAssignment);
+                    }
+                } else
+                {
+                    var BuiltName = field.Value.Name;
                     if (!TrimmedPayloadFields.TryGetValue(BuiltName, out string FieldValue))
                     {
                         FieldValue = field.Value.InitialValue;  // assign a default if not set by user
                     }
                     FieldAssignment fieldAssignment = new(field.Value, FieldValue);
-                    fieldAssignment.ElementIndex = i;
+                    fieldAssignment.ElementIndex = 1;
                     fieldAssignments.Add(fieldAssignment);
                 }
             }
