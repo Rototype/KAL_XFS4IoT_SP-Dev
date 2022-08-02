@@ -1072,6 +1072,18 @@ namespace XFS4IoTFramework.Common
                     Positions: positions);
             }
 
+            XFS4IoT.CCPay.StatusClass ccPay = null;
+            if (Common.CCPayStatus is not null)
+            {
+                ccPay = new XFS4IoT.CCPay.StatusClass(Common.CCPayStatus.Terminal switch
+                {
+                    CCPayStatusClass.TerminalEnum.Inoperative => XFS4IoT.CCPay.StatusClass.TerminalEnum.Inoperative,
+                    CCPayStatusClass.TerminalEnum.Busy => XFS4IoT.CCPay.StatusClass.TerminalEnum.Busy,
+                    CCPayStatusClass.TerminalEnum.Idle => XFS4IoT.CCPay.StatusClass.TerminalEnum.Idle,
+                    _ => XFS4IoT.CCPay.StatusClass.TerminalEnum.Unknown,
+                });
+            }
+
             return Task.FromResult(
                 new StatusCompletion.PayloadData(
                     MessagePayload.CompletionCodeEnum.Success,
@@ -1090,7 +1102,8 @@ namespace XFS4IoTFramework.Common
                     VendorMode: vendorMode,
                     BarcodeReader: barcodeReader,
                     Biometric: biometric,
-                    CashAcceptor: cashAcceptor)
+                    CashAcceptor: cashAcceptor,
+                    CCPay: ccPay)
                 );
         }
     }
