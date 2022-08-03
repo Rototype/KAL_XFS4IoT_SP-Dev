@@ -29,7 +29,7 @@ namespace XFS4IoTFramework.CCPay
             }
             Logger.Log(Constants.DeviceClass, "CCPayDev.ReverseLastPaymentDevice()");
 
-            var result = await Device.ReverseLastPayment(new ReverseLastPaymentRequest(rqrev.Payload.Amount, rqrev.Payload.Currency, rqrev.Payload.Timeout), cancel);
+            var result = await Device.ReverseLastPayment(new UserInteractionUpdateCommandEvent(events), new ReverseLastPaymentRequest(rqrev.Payload.Amount, rqrev.Payload.Currency, rqrev.Payload.Timeout), cancel);
 
             Logger.Log(Constants.DeviceClass, $"CCPayDev.ReverseLastPaymentDevice() -> {result.CompletionCode}");
 

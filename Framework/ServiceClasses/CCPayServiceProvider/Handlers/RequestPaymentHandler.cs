@@ -30,7 +30,7 @@ namespace XFS4IoTFramework.CCPay
 
             Logger.Log(Constants.DeviceClass, "CCPayDev.RequestPayment()");
 
-            var result = await Device.RequestPayment(new RequestPaymentRequest(rqpay.Payload.Amount, rqpay.Payload.Currency, rqpay.Payload.Timeout), cancel);
+            var result = await Device.RequestPayment(new UserInteractionUpdateCommandEvent(events), new RequestPaymentRequest(rqpay.Payload.Amount, rqpay.Payload.Currency, rqpay.Payload.Timeout), cancel);
 
             Logger.Log(Constants.DeviceClass, $"CCPayDev.RequestPayment() -> {result.CompletionCode} {result.ErrorCode}");
 

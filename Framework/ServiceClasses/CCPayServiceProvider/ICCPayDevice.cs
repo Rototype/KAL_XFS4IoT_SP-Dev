@@ -15,13 +15,13 @@ namespace XFS4IoTFramework.CCPay
     public interface ICCPayDevice : IDevice
     {
     
-        Task<CloseDayResult> CloseDay(CloseDayRequest request,
+        Task<CloseDayResult> CloseDay(UserInteractionUpdateCommandEvent ce, CloseDayRequest request,
                               CancellationToken cancellation);
                               
-        Task<RequestPaymentResult> RequestPayment(RequestPaymentRequest request,
+        Task<RequestPaymentResult> RequestPayment(UserInteractionUpdateCommandEvent ce, RequestPaymentRequest request,
                               CancellationToken cancellation);
 
-        Task<ReverseLastPaymentResult> ReverseLastPayment(ReverseLastPaymentRequest request,
+        Task<ReverseLastPaymentResult> ReverseLastPayment(UserInteractionUpdateCommandEvent ce, ReverseLastPaymentRequest request,
                               CancellationToken cancellation);
 
         Task<ResetResult> ResetDevice(CancellationToken cancellation);

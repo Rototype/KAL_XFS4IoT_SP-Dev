@@ -22,7 +22,7 @@ namespace XFS4IoTFramework.CCPay
         {
             Logger.Log(Constants.DeviceClass, "CCPayDev.CloseDay()");
 
-            var result = await Device.CloseDay(new CloseDayRequest(send.Payload.Timeout),cancel);
+            var result = await Device.CloseDay(new UserInteractionUpdateCommandEvent(events), new CloseDayRequest(send.Payload.Timeout),cancel);
 
             Logger.Log(Constants.DeviceClass, $"CCPayDev.CloseDay() -> {result.CompletionCode}");
 
