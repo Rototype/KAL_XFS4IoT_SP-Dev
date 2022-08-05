@@ -1578,7 +1578,7 @@ namespace XFS4IoTFramework.Printer
 
             // calc amount to shift
             int shift = 0;
-
+            bool AlignLastY = false;
             switch (fieldAssignment.Field.Vertical)
             {
                 case FormField.VerticalEnum.BOTTOM:
@@ -1597,6 +1597,11 @@ namespace XFS4IoTFramework.Printer
                     // already at top so no shift
                     shift = 0;
                     break;
+                case FormField.VerticalEnum.LAST:
+                    // no shift
+                    shift = 0;
+                    AlignLastY = true;
+                    break;
 
                 default:
                     {
@@ -1610,6 +1615,7 @@ namespace XFS4IoTFramework.Printer
                 foreach (var task in tasks)
                 {
                     task.y += shift;
+                    task.AlignLastY = AlignLastY;
                 }
             }
 
@@ -1862,7 +1868,9 @@ namespace XFS4IoTFramework.Printer
                                         fieldAssignment.Field.Side,
                                         fieldAssignment.Field.Color,
                                         fieldAssignment.Field.Format,
-                                        form.Base == Form.BaseEnum.ROWCOLUMN);
+                                        form.Base == Form.BaseEnum.ROWCOLUMN,
+                                        fieldAssignment.AlignLastY
+                                        );
 
                     // Set up x,y for task - these will be correct 
                     // for LEFT and TOP justification, also row/column
@@ -1896,7 +1904,9 @@ namespace XFS4IoTFramework.Printer
                                     fieldAssignment.Field.Side,
                                     fieldAssignment.Field.Color,
                                     fieldAssignment.Field.Format,
-                                    form.Base == Form.BaseEnum.ROWCOLUMN);
+                                    form.Base == Form.BaseEnum.ROWCOLUMN,
+                                    fieldAssignment.AlignLastY
+                                    );
 
                 // Now check if the text fits, and break of the longest substring that does fit.
                 var result = FindLongestSubstring(task, chop, fieldAssignment, out int width, out int height);
@@ -2121,7 +2131,9 @@ namespace XFS4IoTFramework.Printer
                                 fieldAssignment.Field.Side,
                                 fieldAssignment.Field.Color,
                                 fieldAssignment.Field.Format,
-                                (form.Base == Form.BaseEnum.ROWCOLUMN));
+                                (form.Base == Form.BaseEnum.ROWCOLUMN),
+                                fieldAssignment.AlignLastY
+                                );
 
 
             // Get dimensions
@@ -2164,7 +2176,25 @@ namespace XFS4IoTFramework.Printer
                             fieldAssignment.Field.Barcode,
                             fieldAssignment.Field.Font,
                             fieldAssignment.Width,
-                            fieldAssignment.Height);
+                            fieldAssignment.Height,
+                            fieldAssignment.AlignLastY
+                            );
+
+            switch (fieldAssignment.Field.Vertical)
+            {
+                case FormField.VerticalEnum.BOTTOM:
+                    break;
+
+                case FormField.VerticalEnum.CENTER:
+                    break;
+
+                case FormField.VerticalEnum.TOP:
+                    break;
+                case FormField.VerticalEnum.LAST:
+                    task.AlignLastY = true;
+                    break;
+            }
+
 
             // Add the task to the task manager.
             Printer.PrintJob.Tasks.Add(task);
@@ -2183,7 +2213,24 @@ namespace XFS4IoTFramework.Printer
                                     fieldAssignment.Height,
                                     fieldAssignment.Field.Format == "BMP" ? GraphicTask.ImageFormatEnum.BMP : GraphicTask.ImageFormatEnum.JPG,
                                     fieldAssignment.Field.Scaling,
-                                    Convert.FromBase64String(fieldAssignment.Value).ToList());
+                                    Convert.FromBase64String(fieldAssignment.Value).ToList(),
+                                    fieldAssignment.AlignLastY
+                                    );
+
+            switch (fieldAssignment.Field.Vertical)
+            {
+                case FormField.VerticalEnum.BOTTOM:
+                    break;
+
+                case FormField.VerticalEnum.CENTER:
+                    break;
+
+                case FormField.VerticalEnum.TOP:
+                    break;
+                case FormField.VerticalEnum.LAST:
+                    task.AlignLastY = true;
+                    break;
+            }
 
             // Add the task to the task manager.
             Printer.PrintJob.Tasks.Add(task);
@@ -2243,6 +2290,7 @@ namespace XFS4IoTFramework.Printer
                 Y = -1;
                 Width = -1;
                 Height = -1;
+                AlignLastY = false;
             }
             public FieldAssignment(FormField Field,
                                    int ElementIndex,
@@ -2255,6 +2303,7 @@ namespace XFS4IoTFramework.Printer
                 Y = -1;
                 Width = -1;
                 Height = -1;
+                AlignLastY = false;
             }
 
             public FormField Field { get; init; }
@@ -2264,6 +2313,7 @@ namespace XFS4IoTFramework.Printer
             public int Y { get; set; }
             public int Width { get; set; }
             public int Height { get; set; }
+            public bool AlignLastY { get; set; }
         }
 
         /// <summary>
