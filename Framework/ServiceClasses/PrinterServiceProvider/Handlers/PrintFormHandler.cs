@@ -521,8 +521,8 @@ namespace XFS4IoTFramework.Printer
 
             if (Printer.PrintJob.Tasks.Count > 0)
             {
-                Logger.Log(Constants.DeviceClass, $"PrinterDev.SetPageSize({Printer.PrintJob.PrintLength})");
-                bool pageSizeResult = Device.SetPageSize(Printer.PrintJob.PrintLength);
+                Logger.Log(Constants.DeviceClass, $"PrinterDev.SetPageSize({media.Height})");
+                bool pageSizeResult = Device.SetPageSize(media.Height);
                 Logger.Log(Constants.DeviceClass, $"PrinterDev.SetPageSize() -> {pageSizeResult}");
 
                 PrintTaskResult result = null;
