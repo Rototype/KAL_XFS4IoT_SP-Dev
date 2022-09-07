@@ -24,7 +24,6 @@ namespace XFS4IoTFramework.Printer
         public abstract FieldTypeEnum Type { get; init; }
         public int x { get; set; } // x position of task in dots
         public int y { get; set; } // y position of task in dots
-        public bool AlignLastY { get; set; }
     }
 
     /// <summary>
@@ -44,8 +43,7 @@ namespace XFS4IoTFramework.Printer
                         FieldSideEnum Side,
                         FieldColorEnum Color,
                         string Format,
-                        bool RowColumn,
-                        bool AlignLastY
+                        bool RowColumn
             )
         {
             this.x = x;
@@ -60,7 +58,6 @@ namespace XFS4IoTFramework.Printer
             this.Color = Color;
             this.Format = Format;
             this.RowColumn = RowColumn;
-            this.AlignLastY = AlignLastY;
         }
         public TextTask(TextTask task)
         {
@@ -76,7 +73,6 @@ namespace XFS4IoTFramework.Printer
             Color = task.Color;
             Format = task.Format;
             RowColumn = task.RowColumn;
-            AlignLastY = task.AlignLastY;
         }
 
         public override FieldTypeEnum Type { get; init; } = FieldTypeEnum.TEXT;
@@ -123,7 +119,8 @@ namespace XFS4IoTFramework.Printer
                            ImageFormatEnum Format,
                            FieldScalingEnum Scaling,
                            List<byte> Image,
-                           bool AlignLastY
+                           FormField.VerticalEnum Vertical,
+                           FormField.HorizontalEnum Horizontal
 
             )
         {
@@ -134,7 +131,8 @@ namespace XFS4IoTFramework.Printer
             this.Format = Format;
             this.Scaling = Scaling;
             this.Image = Image;
-            this.AlignLastY = AlignLastY;
+            this.Vertical = Vertical;
+            this.Horizontal = Horizontal;
         }
     public GraphicTask(GraphicTask task)
         {
@@ -145,7 +143,6 @@ namespace XFS4IoTFramework.Printer
             Format = task.Format;
             Scaling = task.Scaling;
             Image = task.Image;
-            AlignLastY = task.AlignLastY;
         }
 
         /// <summary>
@@ -170,6 +167,8 @@ namespace XFS4IoTFramework.Printer
         /// and not losing graphic information.
         /// </summary>
         public FieldScalingEnum Scaling { get; init; }
+        public FormField.VerticalEnum Vertical { get; init; }
+        public FormField.HorizontalEnum Horizontal { get; init; }
     }
 
     /// <summary>
@@ -184,7 +183,8 @@ namespace XFS4IoTFramework.Printer
                            string BarcodeFontName,
                            int Width,
                            int Height,
-                           bool AlignLastY
+                           FormField.VerticalEnum Vertical,
+                           FormField.HorizontalEnum Horizontal
                            )
         {
             this.x = x;
@@ -194,7 +194,8 @@ namespace XFS4IoTFramework.Printer
             this.BarcodeFontName = BarcodeFontName;
             this.Width = Width;
             this.Height = Height;
-            this.AlignLastY = AlignLastY;
+            this.Vertical = Vertical;
+            this.Horizontal = Horizontal;
         }
         public BarcodeTask(BarcodeTask task)
         {
@@ -205,7 +206,10 @@ namespace XFS4IoTFramework.Printer
             BarcodeFontName = task.BarcodeFontName;
             Width = task.Width;
             Height = task.Height;
-            AlignLastY = task.AlignLastY;
+            Vertical = task.Vertical;
+            Horizontal = task.Horizontal;
+            Vertical = task.Vertical;
+            Horizontal = task.Horizontal;
         }
 
         public override FieldTypeEnum Type { get; init; } = FieldTypeEnum.BARCODE;
@@ -218,6 +222,8 @@ namespace XFS4IoTFramework.Printer
         public string BarcodeFontName { get; init; }
         public int Width { get; init; }
         public int Height { get; init; }
+        public FormField.VerticalEnum Vertical { get; init; }
+        public FormField.HorizontalEnum Horizontal { get; init; }
     }
 
     /// <summary>
