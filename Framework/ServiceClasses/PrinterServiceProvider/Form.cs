@@ -555,6 +555,10 @@ namespace XFS4IoTFramework.Printer
             BOTTOM,
             CENTER,
             TOP,
+            BOTTOMCOMPACT,
+            CENTERCOMPACT,
+            TOPCOMPACT,
+            COMPACT,
         }
 
         public FormField(string Name,
