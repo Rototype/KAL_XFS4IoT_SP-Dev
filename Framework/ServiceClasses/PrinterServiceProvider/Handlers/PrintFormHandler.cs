@@ -1580,11 +1580,14 @@ namespace XFS4IoTFramework.Printer
             int shift = 0;
             switch (fieldAssignment.Field.Vertical)
             {
+                case FormField.VerticalEnum.BOTTOMCOMPACT:
                 case FormField.VerticalEnum.BOTTOM:
                     // Shift lines so bottom line is aligned with bottom edge of field box.
                     shift = fieldAssignment.Field.DotHeight - block_height;
                     break;
 
+                case FormField.VerticalEnum.COMPACT:
+                case FormField.VerticalEnum.CENTERCOMPACT:
                 case FormField.VerticalEnum.CENTER:
                     // Shift lines down to half-way
                     shift = (fieldAssignment.Field.DotHeight - block_height) / 2;
@@ -1592,6 +1595,7 @@ namespace XFS4IoTFramework.Printer
                     shift -= (shift % RowUnit);
                     break;
 
+                case FormField.VerticalEnum.TOPCOMPACT:
                 case FormField.VerticalEnum.TOP:
                     // already at top so no shift
                     shift = 0;
@@ -1861,7 +1865,8 @@ namespace XFS4IoTFramework.Printer
                                         fieldAssignment.Field.Side,
                                         fieldAssignment.Field.Color,
                                         fieldAssignment.Field.Format,
-                                        form.Base == Form.BaseEnum.ROWCOLUMN
+                                        form.Base == Form.BaseEnum.ROWCOLUMN,
+                                        fieldAssignment.Field.Vertical
                                         );
 
                     // Set up x,y for task - these will be correct 
@@ -1896,7 +1901,8 @@ namespace XFS4IoTFramework.Printer
                                     fieldAssignment.Field.Side,
                                     fieldAssignment.Field.Color,
                                     fieldAssignment.Field.Format,
-                                    form.Base == Form.BaseEnum.ROWCOLUMN
+                                    form.Base == Form.BaseEnum.ROWCOLUMN,
+                                    fieldAssignment.Field.Vertical
                                     );
 
                 // Now check if the text fits, and break of the longest substring that does fit.
@@ -2122,7 +2128,8 @@ namespace XFS4IoTFramework.Printer
                                 fieldAssignment.Field.Side,
                                 fieldAssignment.Field.Color,
                                 fieldAssignment.Field.Format,
-                                (form.Base == Form.BaseEnum.ROWCOLUMN)
+                                (form.Base == Form.BaseEnum.ROWCOLUMN),
+                                fieldAssignment.Field.Vertical
                                 );
 
 

@@ -43,7 +43,8 @@ namespace XFS4IoTFramework.Printer
                         FieldSideEnum Side,
                         FieldColorEnum Color,
                         string Format,
-                        bool RowColumn
+                        bool RowColumn,
+                        FormField.VerticalEnum Vertical
             )
         {
             this.x = x;
@@ -58,6 +59,7 @@ namespace XFS4IoTFramework.Printer
             this.Color = Color;
             this.Format = Format;
             this.RowColumn = RowColumn;
+            this.Vertical = Vertical;
         }
         public TextTask(TextTask task)
         {
@@ -73,6 +75,7 @@ namespace XFS4IoTFramework.Printer
             Color = task.Color;
             Format = task.Format;
             RowColumn = task.RowColumn;
+            Vertical = task.Vertical;
         }
 
         public override FieldTypeEnum Type { get; init; } = FieldTypeEnum.TEXT;
@@ -97,6 +100,7 @@ namespace XFS4IoTFramework.Printer
         /// Flag set true if field came from ROWCOLUMN based form
         /// </summary>
         public bool RowColumn { get; init; }
+        public FormField.VerticalEnum Vertical { get; init; }
     }
 
     /// <summary>
