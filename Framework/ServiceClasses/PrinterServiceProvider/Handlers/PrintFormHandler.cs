@@ -23,547 +23,566 @@ namespace XFS4IoTFramework.Printer
     {
         private async Task<PrintFormCompletion.PayloadData> HandlePrintForm(IPrintFormEvents events, PrintFormCommand printForm, CancellationToken cancel)
         {
-            PrintFormEvents = events;
 
-            Dictionary<string, Form> forms = Printer.GetForms();
-            // Locate the Form and Media and check they are valid for this device
-            // First check specified form loaded or not
-            if (!forms.ContainsKey(printForm.Payload.FormName))
+            try
             {
-                return new PrintFormCompletion.PayloadData(MessagePayload.CompletionCodeEnum.CommandErrorCode,
-                                                           $"Requested form not found. {printForm.Payload.FormName}",
-                                                           PrintFormCompletion.PayloadData.ErrorCodeEnum.FormNotFound);
-            }
+                PrintFormEvents = events;
 
-            // Check form device supported
-            Form form = forms[printForm.Payload.FormName];
-            FormRules rules = Device.FormRules;
-            if (rules.RowColumnOnly &&
-                form.Base != Form.BaseEnum.ROWCOLUMN)
-            {
-                return new PrintFormCompletion.PayloadData(MessagePayload.CompletionCodeEnum.CommandErrorCode,
-                                                           $"UNIT is not valid for this printer - only ROWCOLUMN supported. {form.Base}, {printForm.Payload.FormName}",
-                                                           PrintFormCompletion.PayloadData.ErrorCodeEnum.FormNotFound);
-            }
-
-            Contracts.IsTrue(rules.MaxSkew >= rules.MinSkew, $"Unexpected form. the MinSkew is greater than MaxSkew. {printForm.Payload.FormName}");
-
-            if (!rules.ValidOrientation.HasFlag(form.Orientation))
-            {
-                return new PrintFormCompletion.PayloadData(MessagePayload.CompletionCodeEnum.CommandErrorCode,
-                                                           $"Invalid orientation. {form.Orientation}, {printForm.Payload.FormName}",
-                                                           PrintFormCompletion.PayloadData.ErrorCodeEnum.FormNotFound);
-            }
-
-            // Check all fields
-            foreach (var field in form.Fields)
-            {
-                var result = CheckFieldValid(field.Value, form);
-                if (result.CompletionCode != MessagePayload.CompletionCodeEnum.Success)
+                Dictionary<string, Form> forms = Printer.GetForms();
+                // Locate the Form and Media and check they are valid for this device
+                // First check specified form loaded or not
+                if (!forms.ContainsKey(printForm.Payload.FormName))
                 {
-                    return new PrintFormCompletion.PayloadData(result.CompletionCode,
-                                                               $"{result.ErrorDescription} Field:{field.Key}",
-                                                               result.ErrorCode);
+                    return new PrintFormCompletion.PayloadData(MessagePayload.CompletionCodeEnum.CommandErrorCode,
+                                                               $"Requested form not found. {printForm.Payload.FormName}",
+                                                               PrintFormCompletion.PayloadData.ErrorCodeEnum.FormNotFound);
                 }
-            }
 
-            // Check media specified by the client
-            Dictionary<string, Media> medias = Printer.GetMedias();
-            if (!medias.ContainsKey(printForm.Payload.MediaName))
-            {
-                return new PrintFormCompletion.PayloadData(MessagePayload.CompletionCodeEnum.CommandErrorCode,
-                                                           $"Requested media not found. {printForm.Payload.MediaName}",
-                                                           PrintFormCompletion.PayloadData.ErrorCodeEnum.MediaNotFound);
-            }
-
-            // Check media
-            Media media = medias[printForm.Payload.MediaName];
-            {
-                var result = CheckMediaValid(media);
-                if (result.CompletionCode != MessagePayload.CompletionCodeEnum.Success)
+                // Check form device supported
+                Form form = forms[printForm.Payload.FormName];
+                FormRules rules = Device.FormRules;
+                if (rules.RowColumnOnly &&
+                    form.Base != Form.BaseEnum.ROWCOLUMN)
                 {
-                    return new PrintFormCompletion.PayloadData(result.CompletionCode,
-                                                               $"Requested media is invalid. {result.ErrorDescription} {printForm.Payload.MediaName}",
-                                                               result.ErrorCode);
+                    return new PrintFormCompletion.PayloadData(MessagePayload.CompletionCodeEnum.CommandErrorCode,
+                                                               $"UNIT is not valid for this printer - only ROWCOLUMN supported. {form.Base}, {printForm.Payload.FormName}",
+                                                               PrintFormCompletion.PayloadData.ErrorCodeEnum.FormNotFound);
                 }
-            }
 
-            Dictionary<string, List<int>> GroupedNames = new();
-            Dictionary<string, string> TrimmedPayloadFields = new();
-            // Index field check
-            int elementNumber = -1;
+                Contracts.IsTrue(rules.MaxSkew >= rules.MinSkew, $"Unexpected form. the MinSkew is greater than MaxSkew. {printForm.Payload.FormName}");
 
-            foreach (var fieldName in printForm.Payload.Fields)
-            {
-
-
-                int separator = fieldName.Key.IndexOf('[');
-                if (separator != -1 &&
-                    fieldName.Key[separator] == '[')
+                if (!rules.ValidOrientation.HasFlag(form.Orientation))
                 {
-                    elementNumber = 0;
-                    int N = separator + 1;
-                    while (fieldName.Key[N] >= '0' && fieldName.Key[N] <= '9')
+                    return new PrintFormCompletion.PayloadData(MessagePayload.CompletionCodeEnum.CommandErrorCode,
+                                                               $"Invalid orientation. {form.Orientation}, {printForm.Payload.FormName}",
+                                                               PrintFormCompletion.PayloadData.ErrorCodeEnum.FormNotFound);
+                }
+
+                // Check all fields
+                foreach (var field in form.Fields)
+                {
+                    var result = CheckFieldValid(field.Value, form);
+                    if (result.CompletionCode != MessagePayload.CompletionCodeEnum.Success)
                     {
-                        elementNumber = elementNumber * 10 + fieldName.Key[N] - '0';
-                        N++;
+                        return new PrintFormCompletion.PayloadData(result.CompletionCode,
+                                                                   $"{result.ErrorDescription} Field:{field.Key}",
+                                                                   result.ErrorCode);
                     }
-                    if (N - separator < 2 || fieldName.Key[N] != ']')
+                }
+
+                // Check media specified by the client
+                Dictionary<string, Media> medias = Printer.GetMedias();
+                if (!medias.ContainsKey(printForm.Payload.MediaName))
+                {
+                    return new PrintFormCompletion.PayloadData(MessagePayload.CompletionCodeEnum.CommandErrorCode,
+                                                               $"Requested media not found. {printForm.Payload.MediaName}",
+                                                               PrintFormCompletion.PayloadData.ErrorCodeEnum.MediaNotFound);
+                }
+
+                // Check media
+                Media media = medias[printForm.Payload.MediaName];
+                {
+                    var result = CheckMediaValid(media);
+                    if (result.CompletionCode != MessagePayload.CompletionCodeEnum.Success)
                     {
-                        return new PrintFormCompletion.PayloadData(MessagePayload.CompletionCodeEnum.CommandErrorCode,
-                                                                   $"Invalid field assignment: expected <name>[nnn]=<value>. {fieldName.Key} {printForm.Payload.FormName}",
-                                                                   PrintFormCompletion.PayloadData.ErrorCodeEnum.FieldSpecFailure);
+                        return new PrintFormCompletion.PayloadData(result.CompletionCode,
+                                                                   $"Requested media is invalid. {result.ErrorDescription} {printForm.Payload.MediaName}",
+                                                                   result.ErrorCode);
                     }
-                    string GroupKey = fieldName.Key[..separator].Trim();
-                    if (!GroupedNames.ContainsKey(GroupKey))
-                        GroupedNames.Add(GroupKey, new() { elementNumber });
+                }
+
+                Dictionary<string, List<int>> GroupedNames = new();
+                Dictionary<string, string> TrimmedPayloadFields = new();
+                // Index field check
+                int elementNumber = -1;
+
+                foreach (var fieldName in printForm.Payload.Fields)
+                {
+
+
+                    int separator = fieldName.Key.IndexOf('[');
+                    if (separator != -1 &&
+                        fieldName.Key[separator] == '[')
+                    {
+                        elementNumber = 0;
+                        int N = separator + 1;
+                        while (fieldName.Key[N] >= '0' && fieldName.Key[N] <= '9')
+                        {
+                            elementNumber = elementNumber * 10 + fieldName.Key[N] - '0';
+                            N++;
+                        }
+                        if (N - separator < 2 || fieldName.Key[N] != ']')
+                        {
+                            return new PrintFormCompletion.PayloadData(MessagePayload.CompletionCodeEnum.CommandErrorCode,
+                                                                       $"Invalid field assignment: expected <name>[nnn]=<value>. {fieldName.Key} {printForm.Payload.FormName}",
+                                                                       PrintFormCompletion.PayloadData.ErrorCodeEnum.FieldSpecFailure);
+                        }
+                        string GroupKey = fieldName.Key[..separator].Trim();
+                        if (!GroupedNames.ContainsKey(GroupKey))
+                            GroupedNames.Add(GroupKey, new() { elementNumber });
+                        else
+                            GroupedNames[GroupKey].Add(elementNumber);
+                        TrimmedPayloadFields.Add($"{GroupKey}[{elementNumber}]", fieldName.Value);
+                    }
                     else
-                        GroupedNames[GroupKey].Add(elementNumber);
-                    TrimmedPayloadFields.Add($"{GroupKey}[{elementNumber}]", fieldName.Value);
-                } else
-                {
-                    string GroupKey = fieldName.Key.Trim();
-                    if (!GroupedNames.ContainsKey(GroupKey))
                     {
-                        GroupedNames.Add(GroupKey, new() { 1 });
-                        TrimmedPayloadFields.Add(GroupKey, fieldName.Value);
+                        string GroupKey = fieldName.Key.Trim();
+                        if (!GroupedNames.ContainsKey(GroupKey))
+                        {
+                            GroupedNames.Add(GroupKey, new() { 1 });
+                            TrimmedPayloadFields.Add(GroupKey, fieldName.Value);
+                        }
                     }
-            }
-            }
-
-            //foreach (var fieldName in printForm.Payload.Fields)
-            foreach (var fieldName in GroupedNames)
-            {
-                if (!form.Fields.ContainsKey(fieldName.Key))
-                {
-                    return new PrintFormCompletion.PayloadData(MessagePayload.CompletionCodeEnum.CommandErrorCode,
-                                                               $"Requested field is invalid. {fieldName.Key} {printForm.Payload.FormName}",
-                                                               PrintFormCompletion.PayloadData.ErrorCodeEnum.FieldError);
                 }
 
-                // Check the field is not read - only.
-                if (form.Fields[fieldName.Key].Access == FieldAccessEnum.READ)
+                //foreach (var fieldName in printForm.Payload.Fields)
+                foreach (var fieldName in GroupedNames)
                 {
-                    return new PrintFormCompletion.PayloadData(MessagePayload.CompletionCodeEnum.CommandErrorCode,
-                                                               $"Value supplied for printing in READ only field. {fieldName.Key} {printForm.Payload.FormName}",
-                                                               PrintFormCompletion.PayloadData.ErrorCodeEnum.FieldError);
-                }
-
-                // Check field is not static.
-                if (form.Fields[fieldName.Key].Class == FormField.ClassEnum.STATIC)
-                {
-                    return new PrintFormCompletion.PayloadData(MessagePayload.CompletionCodeEnum.CommandErrorCode,
-                                                               $"Value supplied for printing in STATIC field. {fieldName.Key} {printForm.Payload.FormName}",
-                                                               PrintFormCompletion.PayloadData.ErrorCodeEnum.FieldError);
-                }
-
-                // Check for index given on non-indexed field or vice versa.
-                if (form.Fields[fieldName.Key].Repeat == 0 && elementNumber != -1)
-                {
-                    return new PrintFormCompletion.PayloadData(MessagePayload.CompletionCodeEnum.CommandErrorCode,
-                                                               $"Indexed value supplied for printing in non-indexed field. {fieldName.Key} {printForm.Payload.FormName}",
-                                                               PrintFormCompletion.PayloadData.ErrorCodeEnum.FieldError);
-                }
-                else if (form.Fields[fieldName.Key].Repeat != 0)
-                {
-                    if (elementNumber == -1)
+                    if (!form.Fields.ContainsKey(fieldName.Key))
                     {
                         return new PrintFormCompletion.PayloadData(MessagePayload.CompletionCodeEnum.CommandErrorCode,
-                                                                   $"Non-indexed value supplied for printing in indexed field. {fieldName.Key} {printForm.Payload.FormName}",
+                                                                   $"Requested field is invalid. {fieldName.Key} {printForm.Payload.FormName}",
                                                                    PrintFormCompletion.PayloadData.ErrorCodeEnum.FieldError);
                     }
 
-                    if (elementNumber >= form.Fields[fieldName.Key].Repeat)
+                    // Check the field is not read - only.
+                    if (form.Fields[fieldName.Key].Access == FieldAccessEnum.READ)
                     {
                         return new PrintFormCompletion.PayloadData(MessagePayload.CompletionCodeEnum.CommandErrorCode,
-                                                                   $"Index value supplied larger than field INDEX repeat count. {fieldName.Key} {printForm.Payload.FormName}",
+                                                                   $"Value supplied for printing in READ only field. {fieldName.Key} {printForm.Payload.FormName}",
                                                                    PrintFormCompletion.PayloadData.ErrorCodeEnum.FieldError);
                     }
-                }
-            }
 
-            PaperSourceEnum? paperSource = null;
-            string customSource = null;
-
-            // Capability check
-            if (printForm.Payload.PaperSource is null)
-            {
-                paperSource = PaperSourceEnum.Default;
-            }
-            else
-            {
-                if (printForm.Payload.PaperSource == "aux" ||
-                    printForm.Payload.PaperSource == "aux2" ||
-                    printForm.Payload.PaperSource == "external" ||
-                    printForm.Payload.PaperSource == "lower" ||
-                    printForm.Payload.PaperSource == "upper" ||
-                    printForm.Payload.PaperSource == "park")
-                {
-                    if ((printForm.Payload.PaperSource == "aux" &&
-                        !Common.PrinterCapabilities.PaperSources.HasFlag(PrinterCapabilitiesClass.PaperSourceEnum.AUX)) ||
-                        (printForm.Payload.PaperSource == "aux2" &&
-                        !Common.PrinterCapabilities.PaperSources.HasFlag(PrinterCapabilitiesClass.PaperSourceEnum.AUX2)) ||
-                        (printForm.Payload.PaperSource == "external" &&
-                        !Common.PrinterCapabilities.PaperSources.HasFlag(PrinterCapabilitiesClass.PaperSourceEnum.External)) ||
-                        (printForm.Payload.PaperSource == "lower" &&
-                        !Common.PrinterCapabilities.PaperSources.HasFlag(PrinterCapabilitiesClass.PaperSourceEnum.Lower)) ||
-                        (printForm.Payload.PaperSource == "upper" &&
-                        !Common.PrinterCapabilities.PaperSources.HasFlag(PrinterCapabilitiesClass.PaperSourceEnum.Upper)) ||
-                        (printForm.Payload.PaperSource == "park" &&
-                        !Common.PrinterCapabilities.PaperSources.HasFlag(PrinterCapabilitiesClass.PaperSourceEnum.Park)))
+                    // Check field is not static.
+                    if (form.Fields[fieldName.Key].Class == FormField.ClassEnum.STATIC)
                     {
-                        return new PrintFormCompletion.PayloadData(MessagePayload.CompletionCodeEnum.InvalidData,
-                                                                   $"Specified paper source is not supported by the device. {printForm.Payload.PaperSource}");
+                        return new PrintFormCompletion.PayloadData(MessagePayload.CompletionCodeEnum.CommandErrorCode,
+                                                                   $"Value supplied for printing in STATIC field. {fieldName.Key} {printForm.Payload.FormName}",
+                                                                   PrintFormCompletion.PayloadData.ErrorCodeEnum.FieldError);
                     }
 
-                    paperSource = printForm.Payload.PaperSource switch
+                    // Check for index given on non-indexed field or vice versa.
+                    if (form.Fields[fieldName.Key].Repeat == 0 && elementNumber != -1)
                     {
-                        "aux" => PaperSourceEnum.AUX,
-                        "aux2" => PaperSourceEnum.AUX2,
-                        "external" => PaperSourceEnum.External,
-                        "lower" => PaperSourceEnum.Lower,
-                        "upper" => PaperSourceEnum.Upper,
-                        _ => PaperSourceEnum.Park,
-                    };
+                        return new PrintFormCompletion.PayloadData(MessagePayload.CompletionCodeEnum.CommandErrorCode,
+                                                                   $"Indexed value supplied for printing in non-indexed field. {fieldName.Key} {printForm.Payload.FormName}",
+                                                                   PrintFormCompletion.PayloadData.ErrorCodeEnum.FieldError);
+                    }
+                    else if (form.Fields[fieldName.Key].Repeat != 0)
+                    {
+                        if (elementNumber == -1)
+                        {
+                            return new PrintFormCompletion.PayloadData(MessagePayload.CompletionCodeEnum.CommandErrorCode,
+                                                                       $"Non-indexed value supplied for printing in indexed field. {fieldName.Key} {printForm.Payload.FormName}",
+                                                                       PrintFormCompletion.PayloadData.ErrorCodeEnum.FieldError);
+                        }
+
+                        if (elementNumber >= form.Fields[fieldName.Key].Repeat)
+                        {
+                            return new PrintFormCompletion.PayloadData(MessagePayload.CompletionCodeEnum.CommandErrorCode,
+                                                                       $"Index value supplied larger than field INDEX repeat count. {fieldName.Key} {printForm.Payload.FormName}",
+                                                                       PrintFormCompletion.PayloadData.ErrorCodeEnum.FieldError);
+                        }
+                    }
+                }
+
+                PaperSourceEnum? paperSource = null;
+                string customSource = null;
+
+                // Capability check
+                if (printForm.Payload.PaperSource is null)
+                {
+                    paperSource = PaperSourceEnum.Default;
                 }
                 else
                 {
-                    if (!Common.PrinterCapabilities.CustomPaperSources.ContainsKey(printForm.Payload.PaperSource))
+                    if (printForm.Payload.PaperSource == "aux" ||
+                        printForm.Payload.PaperSource == "aux2" ||
+                        printForm.Payload.PaperSource == "external" ||
+                        printForm.Payload.PaperSource == "lower" ||
+                        printForm.Payload.PaperSource == "upper" ||
+                        printForm.Payload.PaperSource == "park")
                     {
-                        return new PrintFormCompletion.PayloadData(MessagePayload.CompletionCodeEnum.InvalidData,
-                                                                   $"Specified paper source is not supported by the device. {printForm.Payload.PaperSource}");
+                        if ((printForm.Payload.PaperSource == "aux" &&
+                            !Common.PrinterCapabilities.PaperSources.HasFlag(PrinterCapabilitiesClass.PaperSourceEnum.AUX)) ||
+                            (printForm.Payload.PaperSource == "aux2" &&
+                            !Common.PrinterCapabilities.PaperSources.HasFlag(PrinterCapabilitiesClass.PaperSourceEnum.AUX2)) ||
+                            (printForm.Payload.PaperSource == "external" &&
+                            !Common.PrinterCapabilities.PaperSources.HasFlag(PrinterCapabilitiesClass.PaperSourceEnum.External)) ||
+                            (printForm.Payload.PaperSource == "lower" &&
+                            !Common.PrinterCapabilities.PaperSources.HasFlag(PrinterCapabilitiesClass.PaperSourceEnum.Lower)) ||
+                            (printForm.Payload.PaperSource == "upper" &&
+                            !Common.PrinterCapabilities.PaperSources.HasFlag(PrinterCapabilitiesClass.PaperSourceEnum.Upper)) ||
+                            (printForm.Payload.PaperSource == "park" &&
+                            !Common.PrinterCapabilities.PaperSources.HasFlag(PrinterCapabilitiesClass.PaperSourceEnum.Park)))
+                        {
+                            return new PrintFormCompletion.PayloadData(MessagePayload.CompletionCodeEnum.InvalidData,
+                                                                       $"Specified paper source is not supported by the device. {printForm.Payload.PaperSource}");
+                        }
+
+                        paperSource = printForm.Payload.PaperSource switch
+                        {
+                            "aux" => PaperSourceEnum.AUX,
+                            "aux2" => PaperSourceEnum.AUX2,
+                            "external" => PaperSourceEnum.External,
+                            "lower" => PaperSourceEnum.Lower,
+                            "upper" => PaperSourceEnum.Upper,
+                            _ => PaperSourceEnum.Park,
+                        };
                     }
-                    customSource = printForm.Payload.PaperSource;
+                    else
+                    {
+                        if (!Common.PrinterCapabilities.CustomPaperSources.ContainsKey(printForm.Payload.PaperSource))
+                        {
+                            return new PrintFormCompletion.PayloadData(MessagePayload.CompletionCodeEnum.InvalidData,
+                                                                       $"Specified paper source is not supported by the device. {printForm.Payload.PaperSource}");
+                        }
+                        customSource = printForm.Payload.PaperSource;
+                    }
                 }
-            }
 
-            // Trying to print direct form printing if the firmware keeps
-            // loaded form information or XFS3 wrapper.
-            try
-            {
-                Logger.Log(Constants.DeviceClass, $"PrinterDev.DirectFormPrintAsync()");
-                var result = await Device.DirectFormPrintAsync(new DirectFormPrintRequest(printForm.Payload.FormName,
-                                                                                          printForm.Payload.MediaName,
-                                                                                          printForm.Payload.Fields,
-                                                                                          paperSource,
-                                                                                          customSource),
-                                                               cancel);
-                Logger.Log(Constants.DeviceClass, $"PrinterDev.DirectFormPrintAsync() -> {result.CompletionCode}, {result.ErrorCode}");
-
-                if (result.CompletionCode != MessagePayload.CompletionCodeEnum.UnsupportedCommand)
+                // Trying to print direct form printing if the firmware keeps
+                // loaded form information or XFS3 wrapper.
+                try
                 {
-                    return new PrintFormCompletion.PayloadData(result.CompletionCode,
-                                                               result.ErrorDescription,
-                                                               result.ErrorCode);
+                    Logger.Log(Constants.DeviceClass, $"PrinterDev.DirectFormPrintAsync()");
+                    var result = await Device.DirectFormPrintAsync(new DirectFormPrintRequest(printForm.Payload.FormName,
+                                                                                              printForm.Payload.MediaName,
+                                                                                              printForm.Payload.Fields,
+                                                                                              paperSource,
+                                                                                              customSource),
+                                                                   cancel);
+                    Logger.Log(Constants.DeviceClass, $"PrinterDev.DirectFormPrintAsync() -> {result.CompletionCode}, {result.ErrorCode}");
+
+                    if (result.CompletionCode != MessagePayload.CompletionCodeEnum.UnsupportedCommand)
+                    {
+                        return new PrintFormCompletion.PayloadData(result.CompletionCode,
+                                                                   result.ErrorDescription,
+                                                                   result.ErrorCode);
+                    }
                 }
-            }
-            catch (NotImplementedException)
-            {
-                Logger.Log(Constants.DeviceClass, $"PrinterDev.DirectFormPrint() -> Unsupported.");
-            }
-            catch (NotSupportedException)
-            {
-                Logger.Log(Constants.DeviceClass, $"PrinterDev.DirectFormPrint() -> Unsupported.");
-            }
-            catch (Exception)
-            { throw; }
-
-            // This step involves checking all
-            // REQUIRED fields have assignments, creating assignments for
-            // STATIC fields and filling in OPTIONAL field assignments.
-            List<FieldAssignment> fieldAssignments = new();
-
-
-
-            foreach (var field in form.Fields)
-            {
-
-
-                // If STATIC field, just add a new assignment for the INITIALVALUE
-                if (field.Value.Class == FormField.ClassEnum.STATIC)
+                catch (NotImplementedException)
                 {
-                    FieldAssignment fieldAssignment = new(field.Value, field.Value.InitialValue);
+                    Logger.Log(Constants.DeviceClass, $"PrinterDev.DirectFormPrint() -> Unsupported.");
+                }
+                catch (NotSupportedException)
+                {
+                    Logger.Log(Constants.DeviceClass, $"PrinterDev.DirectFormPrint() -> Unsupported.");
+                }
+                catch (Exception)
+                { throw; }
+
+                // This step involves checking all
+                // REQUIRED fields have assignments, creating assignments for
+                // STATIC fields and filling in OPTIONAL field assignments.
+                List<FieldAssignment> fieldAssignments = new();
+
+
+
+                foreach (var field in form.Fields)
+                {
+
+
+                    // If STATIC field, just add a new assignment for the INITIALVALUE
+                    if (field.Value.Class == FormField.ClassEnum.STATIC)
+                    {
+                        FieldAssignment fieldAssignment = new(field.Value, field.Value.InitialValue);
+
+                        if (field.Value.Repeat > 0)
+                        {
+                            int i = 0;
+                            for (; i < field.Value.Repeat; i++)
+                            {
+                                fieldAssignment.ElementIndex = i;
+                                fieldAssignments.Add(fieldAssignment);
+                            }
+                        }
+                        else
+                        {
+                            fieldAssignments.Add(fieldAssignment);
+                        }
+                        continue;
+                    }
+
+                    // If REQUIRED, just check there is already an assignment for the field.
+                    if (field.Value.Class == FormField.ClassEnum.REQUIRED)
+                    {
+
+                        for (int i = 0; i != field.Value.Repeat; i++)
+                        {
+                            var BuiltName = $"{field.Value.Name}[{i}]";
+                            if (TrimmedPayloadFields.TryGetValue(BuiltName, out string FieldValue))
+                            {
+                                FieldAssignment fieldAssignment = new(field.Value, FieldValue);
+                                fieldAssignment.ElementIndex = i;
+                                fieldAssignments.Add(fieldAssignment);
+                            }
+                        }
+
+
+                        // For index fields, all elements must be assigned: count how many there are in the list.
+                        int NoExpectedAssignments = (field.Value.Repeat > 0) ? field.Value.Repeat : 1;
+                        foreach (var fieldAssignment in fieldAssignments)
+                        {
+                            if (fieldAssignment.Field == field.Value)
+                                NoExpectedAssignments--;
+                        }
+
+                        if (NoExpectedAssignments != 0)
+                        {
+                            return new PrintFormCompletion.PayloadData(MessagePayload.CompletionCodeEnum.CommandErrorCode,
+                                                                       $"A value or values were not supplied for a REQUIRED field. {printForm.Payload.FormName}",
+                                                                       PrintFormCompletion.PayloadData.ErrorCodeEnum.FieldError);
+                        }
+                        continue;
+                    }
+
+                // Must be an OPTIONAL field: fill in any missing assignments with the
+                // INITIALVALUE if there is one.
+                (field.Value.Class == FormField.ClassEnum.OPTIONAL).IsTrue($"Unexpected class type received. {field.Value.Class}");
 
                     if (field.Value.Repeat > 0)
                     {
-                        int i = 0;
-                        for (; i < field.Value.Repeat; i++)
+
+                        for (int i = 0; i != field.Value.Repeat; i++)
                         {
-                            fieldAssignment.ElementIndex = i;
-                            fieldAssignments.Add(fieldAssignment);
+                            var BuiltName = $"{field.Value.Name}[{i}]";
+                            if (!TrimmedPayloadFields.TryGetValue(BuiltName, out string FieldValue))
+                            {
+                                FieldValue = field.Value.InitialValue;  // assign a default if not set by user
+                            }
+                            if (!string.IsNullOrEmpty(FieldValue)) // do create fieldAssignment on null or empty field (used by FOLLOWS)
+                            {
+
+                                FieldAssignment fieldAssignment = new(field.Value, FieldValue);
+                                fieldAssignment.ElementIndex = i;
+                                fieldAssignments.Add(fieldAssignment);
+                            }
                         }
                     }
                     else
                     {
-                        fieldAssignments.Add(fieldAssignment);
-                    }
-                    continue;
-                }
-
-                // If REQUIRED, just check there is already an assignment for the field.
-                if (field.Value.Class == FormField.ClassEnum.REQUIRED)
-                {
-
-                    for (int i = 0; i != field.Value.Repeat; i++)
-                    {
-                        var BuiltName = $"{field.Value.Name}[{i}]";
-                        if (TrimmedPayloadFields.TryGetValue(BuiltName, out string FieldValue))
-                        {
-                            FieldAssignment fieldAssignment = new(field.Value, FieldValue);
-                            fieldAssignment.ElementIndex = i;
-                            fieldAssignments.Add(fieldAssignment);
-                        }
-                    }
-
-
-                    // For index fields, all elements must be assigned: count how many there are in the list.
-                    int NoExpectedAssignments = (field.Value.Repeat > 0) ? field.Value.Repeat : 1;
-                    foreach (var fieldAssignment in fieldAssignments)
-                    {
-                        if (fieldAssignment.Field == field.Value)
-                            NoExpectedAssignments--;
-                    }
-
-                    if (NoExpectedAssignments != 0)
-                    {
-                        return new PrintFormCompletion.PayloadData(MessagePayload.CompletionCodeEnum.CommandErrorCode,
-                                                                   $"A value or values were not supplied for a REQUIRED field. {printForm.Payload.FormName}",
-                                                                   PrintFormCompletion.PayloadData.ErrorCodeEnum.FieldError);
-                    }
-                    continue;
-                }
-
-            // Must be an OPTIONAL field: fill in any missing assignments with the
-            // INITIALVALUE if there is one.
-            (field.Value.Class == FormField.ClassEnum.OPTIONAL).IsTrue($"Unexpected class type received. {field.Value.Class}");
-
-                if (field.Value.Repeat > 0)
-                {
-
-                    for (int i = 0; i != field.Value.Repeat; i++)
-                    {
-                        var BuiltName = $"{field.Value.Name}[{i}]";
+                        var BuiltName = field.Value.Name;
                         if (!TrimmedPayloadFields.TryGetValue(BuiltName, out string FieldValue))
                         {
                             FieldValue = field.Value.InitialValue;  // assign a default if not set by user
                         }
-                        if (!string.IsNullOrEmpty(FieldValue)) // do create fieldAssignment on null or empty field (used by FOLLOWS)
-                        {
-
-                            FieldAssignment fieldAssignment = new(field.Value, FieldValue);
-                            fieldAssignment.ElementIndex = i;
-                            fieldAssignments.Add(fieldAssignment);
-                        }
+                        FieldAssignment fieldAssignment = new(field.Value, FieldValue);
+                        fieldAssignment.ElementIndex = 1;
+                        fieldAssignments.Add(fieldAssignment);
                     }
-                } else
+                }
+
+                int FormLeftOffset, FormTopOffset;
+                // Calculate position of form on media.
+                // This depends on the alignment and offsets sent in the command and those in the form.
                 {
-                    var BuiltName = field.Value.Name;
-                    if (!TrimmedPayloadFields.TryGetValue(BuiltName, out string FieldValue))
+                    var result = CalculateFormOffsets(printForm.Payload, form, media, out FormLeftOffset, out FormTopOffset);
+                    if (result.CompletionCode != MessagePayload.CompletionCodeEnum.Success)
                     {
-                        FieldValue = field.Value.InitialValue;  // assign a default if not set by user
+                        return new PrintFormCompletion.PayloadData(result.CompletionCode,
+                                                                   result.ErrorDescription,
+                                                                   result.ErrorCode);
                     }
-                    FieldAssignment fieldAssignment = new(field.Value, FieldValue);
-                    fieldAssignment.ElementIndex = 1;
-                    fieldAssignments.Add(fieldAssignment);
-                }
-            }
-
-            int FormLeftOffset, FormTopOffset;
-            // Calculate position of form on media.
-            // This depends on the alignment and offsets sent in the command and those in the form.
-            {
-                var result = CalculateFormOffsets(printForm.Payload, form, media, out FormLeftOffset, out FormTopOffset);
-                if (result.CompletionCode != MessagePayload.CompletionCodeEnum.Success)
-                {
-                    return new PrintFormCompletion.PayloadData(result.CompletionCode,
-                                                               result.ErrorDescription,
-                                                               result.ErrorCode);
-                }
-            }
-
-            // Check length of paper to print this form & store in PrintJob if greater than length needed to print any buffer stuff.
-            int PrintLength = 0;
-            if (form.Orientation == FormOrientationEnum.PORTRAIT)
-            {
-                PrintLength = FormTopOffset + form.DotHeight;
-            }
-            else
-            {
-                PrintLength = FormLeftOffset + form.DotWidth;
-            }
-
-            if (PrintLength > Printer.PrintJob.PrintLength)
-            {
-                Printer.PrintJob.PrintLength = PrintLength;
-            }
-
-            // Calculate assignment print locations
-            // Work out the position and dimensions of the rectangle each FieldAssignment
-            // must fit within.
-            {
-                var result = CalculateAssignmentPrintLocations(form, fieldAssignments, FormLeftOffset, FormTopOffset);
-                if (result.CompletionCode != MessagePayload.CompletionCodeEnum.Success)
-                {
-                    return new PrintFormCompletion.PayloadData(result.CompletionCode,
-                                                               result.ErrorDescription,
-                                                               result.ErrorCode);
-                }
-            }
-
-            // About to convert field assignments to Task list to be added to the print job.
-            // First check the form orientation is the same as for any buffered
-            // tasks. If not, flush buffered tasks.
-            if (Printer.PrintJob.Orientation != form.Orientation &&
-                Printer.PrintJob.Tasks.Count > 0)
-            {
-                Logger.Log(Constants.DeviceClass, "PrinterDev.SetPageSize()");
-                bool pageSizeResult = Device.SetPageSize(Printer.PrintJob.PrintLength);
-                Logger.Log(Constants.DeviceClass, $"PrinterDev.SetPageSize() -> {pageSizeResult}");
-
-                PrintTaskResult result = null;
-                if (pageSizeResult)
-                {
-                    Printer.PrintJob.SortTasks();
-                    Logger.Log(Constants.DeviceClass, "PrinterDev.ExecutePrintTasksAsync()");
-                    result = await Device.ExecutePrintTasksAsync(new PrintTaskRequest(Printer.PrintJob,
-                                                                                      paperSource,
-                                                                                      customSource), cancel);
-                    Logger.Log(Constants.DeviceClass, $"PrinterDev.ExecutePrintTasksAsync() -> {result.CompletionCode}, {result.ErrorCode}");
                 }
 
-                // Clear flushed tasks
-                Printer.PrintJob.Tasks.Clear();
-
-                if (result is not null &&
-                    result.CompletionCode != MessagePayload.CompletionCodeEnum.Success)
+                // Check length of paper to print this form & store in PrintJob if greater than length needed to print any buffer stuff.
+                int PrintLength = 0;
+                if (form.Orientation == FormOrientationEnum.PORTRAIT)
                 {
-                    return new PrintFormCompletion.PayloadData(result.CompletionCode,
-                                                               result.ErrorDescription,
-                                                               result.ErrorCode);
+                    PrintLength = FormTopOffset + form.DotHeight;
                 }
-                if (!pageSizeResult)
+                else
                 {
-                    return new PrintFormCompletion.PayloadData(MessagePayload.CompletionCodeEnum.HardwareError,
-                                                               $"Failed to set page size. {Printer.PrintJob.PrintLength}");
-                }
-            }
-
-            Printer.PrintJob.Orientation = form.Orientation;
-
-            // Convert FieldAssignments to Tasks and add them to the current print job
-            // For ROWCOLUMN Forms, all chars must be aligned on ROWCOLUMN boundaries.
-            // For other forms don't care.  
-            // Calculate RowUnit and ColumnUnit which are minimum char spacing in order to 
-            // check & ensure this alignment.
-            if (form.Base == Form.BaseEnum.ROWCOLUMN)
-            {
-                (Device.DotsPerRowTop % Device.DotsPerRowBottom == 0).IsTrue($"Unexpected top and bottom (Row) in dots reported by the device class. DotsPerRowTop:{Device.DotsPerRowTop}, DotsPerRowBottom:{Device.DotsPerRowBottom}");
-                (Device.DotsPerColumnTop % Device.DotsPerColumnBottom == 0).IsTrue($"Unexpected top and bottom (Column) in dots reported by the device class. DotsPerColumnTop:{Device.DotsPerColumnTop}, DotsPerColumnBottom:{Device.DotsPerColumnBottom}");
-                RowUnit = Device.DotsPerRowTop / Device.DotsPerRowBottom;
-                ColumnUnit = Device.DotsPerColumnTop / Device.DotsPerColumnBottom;
-            }
-            else
-            {
-                RowUnit = 1;
-                ColumnUnit = 1;
-            }
-
-            // Loop through assignments processing according to field type.
-            foreach (var fieldAssignment in fieldAssignments)
-            {
-                PrintFormResult result;
-                switch (fieldAssignment.Field.Type)
-                {
-                    case FieldTypeEnum.TEXT:
-                        {
-                            result = ConvertTextFieldAssignment(fieldAssignment, form);
-                        }
-                        break;
-
-                    case FieldTypeEnum.GRAPHIC:
-                        {
-                            // Check format of the image is valid or not
-                            result = ConvertGraphicFieldAssignment(fieldAssignment);
-                        }
-                        break;
-
-                    case FieldTypeEnum.BARCODE:
-                        {
-                            // Check format of the barcode is valid or not
-                            result = ConvertBarcodeFieldAssignment(fieldAssignment);
-                        }
-                        break;
-                    default:
-                        {
-                            return new PrintFormCompletion.PayloadData(MessagePayload.CompletionCodeEnum.CommandErrorCode,
-                                                                       $"Unsupported field type. {fieldAssignment.Field.Name}",
-                                                                       PrintFormCompletion.PayloadData.ErrorCodeEnum.FieldError);
-                        }
+                    PrintLength = FormLeftOffset + form.DotWidth;
                 }
 
-                if (result.CompletionCode != MessagePayload.CompletionCodeEnum.Success)
+                if (PrintLength > Printer.PrintJob.PrintLength)
                 {
+                    Printer.PrintJob.PrintLength = PrintLength;
+                }
+
+                // Calculate assignment print locations
+                // Work out the position and dimensions of the rectangle each FieldAssignment
+                // must fit within.
+                {
+                    var result = CalculateAssignmentPrintLocations(form, fieldAssignments, FormLeftOffset, FormTopOffset);
+                    if (result.CompletionCode != MessagePayload.CompletionCodeEnum.Success)
+                    {
+                        return new PrintFormCompletion.PayloadData(result.CompletionCode,
+                                                                   result.ErrorDescription,
+                                                                   result.ErrorCode);
+                    }
+                }
+
+                // About to convert field assignments to Task list to be added to the print job.
+                // First check the form orientation is the same as for any buffered
+                // tasks. If not, flush buffered tasks.
+                if (Printer.PrintJob.Orientation != form.Orientation &&
+                    Printer.PrintJob.Tasks.Count > 0)
+                {
+                    Logger.Log(Constants.DeviceClass, "PrinterDev.SetPageSize()");
+                    bool pageSizeResult = Device.SetPageSize(Printer.PrintJob.PrintLength);
+                    Logger.Log(Constants.DeviceClass, $"PrinterDev.SetPageSize() -> {pageSizeResult}");
+
+                    PrintTaskResult result = null;
+                    if (pageSizeResult)
+                    {
+                        Printer.PrintJob.SortTasks();
+                        Logger.Log(Constants.DeviceClass, "PrinterDev.ExecutePrintTasksAsync()");
+                        result = await Device.ExecutePrintTasksAsync(new PrintTaskRequest(Printer.PrintJob,
+                                                                                          paperSource,
+                                                                                          customSource), cancel);
+                        Logger.Log(Constants.DeviceClass, $"PrinterDev.ExecutePrintTasksAsync() -> {result.CompletionCode}, {result.ErrorCode}");
+                    }
+
+                    // Clear flushed tasks
                     Printer.PrintJob.Tasks.Clear();
-                    return new PrintFormCompletion.PayloadData(result.CompletionCode,
-                                                               result.ErrorDescription,
-                                                               result.ErrorCode);
+
+                    if (result is not null &&
+                        result.CompletionCode != MessagePayload.CompletionCodeEnum.Success)
+                    {
+                        return new PrintFormCompletion.PayloadData(result.CompletionCode,
+                                                                   result.ErrorDescription,
+                                                                   result.ErrorCode);
+                    }
+                    if (!pageSizeResult)
+                    {
+                        return new PrintFormCompletion.PayloadData(MessagePayload.CompletionCodeEnum.HardwareError,
+                                                                   $"Failed to set page size. {Printer.PrintJob.PrintLength}");
+                    }
                 }
-            }
 
-            // Check the MediaControl.  If non-zero, flush the print job
-            if (printForm.Payload.MediaControl?.Flush is not null &&
-                !(bool)printForm.Payload.MediaControl?.Flush)
-            {
-                // No Flush
-                return new PrintFormCompletion.PayloadData(MessagePayload.CompletionCodeEnum.Success,
-                                                           string.Empty);
-            }
+                Printer.PrintJob.Orientation = form.Orientation;
 
-            if (Printer.PrintJob.Tasks.Count > 0)
-            {
-                Logger.Log(Constants.DeviceClass, $"PrinterDev.SetPageSize({media.Height})");
-                bool pageSizeResult = Device.SetPageSize(media.DotHeight);
-                Logger.Log(Constants.DeviceClass, $"PrinterDev.SetPageSize() -> {pageSizeResult}");
-
-                PrintTaskResult result = null;
-                if (pageSizeResult)
+                // Convert FieldAssignments to Tasks and add them to the current print job
+                // For ROWCOLUMN Forms, all chars must be aligned on ROWCOLUMN boundaries.
+                // For other forms don't care.  
+                // Calculate RowUnit and ColumnUnit which are minimum char spacing in order to 
+                // check & ensure this alignment.
+                if (form.Base == Form.BaseEnum.ROWCOLUMN)
                 {
-                    Printer.PrintJob.SortTasks();
-                    Logger.Log(Constants.DeviceClass, $"PrinterDev.ExecutePrintTasksAsync({Printer.PrintJob.PrintLength})");
-                    result = await Device.ExecutePrintTasksAsync(new PrintTaskRequest(Printer.PrintJob,
-                                                                                      paperSource,
-                                                                                      customSource), cancel);
-                    Logger.Log(Constants.DeviceClass, $"PrinterDev.ExecutePrintTasksAsync() -> {result.CompletionCode}, {result.ErrorCode}");
+                    (Device.DotsPerRowTop % Device.DotsPerRowBottom == 0).IsTrue($"Unexpected top and bottom (Row) in dots reported by the device class. DotsPerRowTop:{Device.DotsPerRowTop}, DotsPerRowBottom:{Device.DotsPerRowBottom}");
+                    (Device.DotsPerColumnTop % Device.DotsPerColumnBottom == 0).IsTrue($"Unexpected top and bottom (Column) in dots reported by the device class. DotsPerColumnTop:{Device.DotsPerColumnTop}, DotsPerColumnBottom:{Device.DotsPerColumnBottom}");
+                    RowUnit = Device.DotsPerRowTop / Device.DotsPerRowBottom;
+                    ColumnUnit = Device.DotsPerColumnTop / Device.DotsPerColumnBottom;
+                }
+                else
+                {
+                    RowUnit = 1;
+                    ColumnUnit = 1;
                 }
 
+                // Loop through assignments processing according to field type.
+                foreach (var fieldAssignment in fieldAssignments)
+                {
+                    PrintFormResult result;
+                    switch (fieldAssignment.Field.Type)
+                    {
+                        case FieldTypeEnum.TEXT:
+                            {
+                                result = ConvertTextFieldAssignment(fieldAssignment, form);
+                            }
+                            break;
+
+                        case FieldTypeEnum.GRAPHIC:
+                            {
+                                // Check format of the image is valid or not
+                                result = ConvertGraphicFieldAssignment(fieldAssignment);
+                            }
+                            break;
+
+                        case FieldTypeEnum.BARCODE:
+                            {
+                                // Check format of the barcode is valid or not
+                                result = ConvertBarcodeFieldAssignment(fieldAssignment);
+                            }
+                            break;
+                        default:
+                            {
+                                return new PrintFormCompletion.PayloadData(MessagePayload.CompletionCodeEnum.CommandErrorCode,
+                                                                           $"Unsupported field type. {fieldAssignment.Field.Name}",
+                                                                           PrintFormCompletion.PayloadData.ErrorCodeEnum.FieldError);
+                            }
+                    }
+
+                    if (result.CompletionCode != MessagePayload.CompletionCodeEnum.Success)
+                    {
+                        Printer.PrintJob.Tasks.Clear();
+                        return new PrintFormCompletion.PayloadData(result.CompletionCode,
+                                                                   result.ErrorDescription,
+                                                                   result.ErrorCode);
+                    }
+                }
+
+                // Check the MediaControl.  If non-zero, flush the print job
+                if (printForm.Payload.MediaControl?.Flush is not null &&
+                    !(bool)printForm.Payload.MediaControl?.Flush)
+                {
+                    // No Flush
+                    return new PrintFormCompletion.PayloadData(MessagePayload.CompletionCodeEnum.Success,
+                                                               string.Empty);
+                }
+
+                if (Printer.PrintJob.Tasks.Count > 0)
+                {
+                    Logger.Log(Constants.DeviceClass, $"PrinterDev.SetPageSize({media.Height})");
+                    bool pageSizeResult = Device.SetPageSize(media.DotHeight);
+                    Logger.Log(Constants.DeviceClass, $"PrinterDev.SetPageSize() -> {pageSizeResult}");
+
+                    PrintTaskResult result = null;
+                    if (pageSizeResult)
+                    {
+                        Printer.PrintJob.SortTasks();
+                        Logger.Log(Constants.DeviceClass, $"PrinterDev.ExecutePrintTasksAsync({Printer.PrintJob.PrintLength})");
+                        result = await Device.ExecutePrintTasksAsync(new PrintTaskRequest(Printer.PrintJob,
+                                                                                          paperSource,
+                                                                                          customSource), cancel);
+                        Logger.Log(Constants.DeviceClass, $"PrinterDev.ExecutePrintTasksAsync() -> {result.CompletionCode}, {result.ErrorCode}");
+                    }
+
+                    // Clear flushed tasks
+                    Printer.PrintJob.Tasks.Clear();
+
+                    if (result is not null &&
+                        result.CompletionCode != MessagePayload.CompletionCodeEnum.Success)
+                    {
+                        return new PrintFormCompletion.PayloadData(result.CompletionCode,
+                                                                   result.ErrorDescription,
+                                                                   result.ErrorCode);
+                    }
+                    if (!pageSizeResult)
+                    {
+                        return new PrintFormCompletion.PayloadData(MessagePayload.CompletionCodeEnum.HardwareError,
+                                                                   $"Failed to set page size. {Printer.PrintJob.PrintLength}");
+                    }
+                }
+
+                if (printForm.Payload.MediaControl is not null)
+                {
+                    // Now do any other media control requested
+                    var result = await ExecuteControlMedia(events, printForm.Payload, cancel);
+                    if (result.CompletionCode != MessagePayload.CompletionCodeEnum.Success)
+                    {
+                        return result;
+                    }
+                }
+
+                return new PrintFormCompletion.PayloadData(MessagePayload.CompletionCodeEnum.Success, string.Empty);
+
+
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
+            finally
+            {
                 // Clear flushed tasks
                 Printer.PrintJob.Tasks.Clear();
-
-                if (result is not null &&
-                    result.CompletionCode != MessagePayload.CompletionCodeEnum.Success)
-                {
-                    return new PrintFormCompletion.PayloadData(result.CompletionCode,
-                                                               result.ErrorDescription,
-                                                               result.ErrorCode);
-                }
-                if (!pageSizeResult)
-                {
-                    return new PrintFormCompletion.PayloadData(MessagePayload.CompletionCodeEnum.HardwareError,
-                                                               $"Failed to set page size. {Printer.PrintJob.PrintLength}");
-                }
             }
 
-            if (printForm.Payload.MediaControl is not null)
-            {
-                // Now do any other media control requested
-                var result = await ExecuteControlMedia(events, printForm.Payload, cancel);
-                if (result.CompletionCode != MessagePayload.CompletionCodeEnum.Success)
-                {
-                    return result;
-                }
-            }
 
-            return new PrintFormCompletion.PayloadData(MessagePayload.CompletionCodeEnum.Success, string.Empty);
         }
 
         /// <summary>
