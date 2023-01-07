@@ -165,6 +165,12 @@ namespace XFS4IoT.Common.Completions
             [DataMember(Name = "CCPay")]
             public CCPay.StatusClass CCPay { get; init; }
 
+            /// <summary>
+            /// Status information for XFS4IoT services implementing the CashPay interface. This 
+            /// will be omitted if the CashPay interface is not supported.
+            /// </summary>
+            [DataMember(Name = "CashPay")]
+            public CCPay.StatusClass CashPay { get; init; }
         }
     }
 }

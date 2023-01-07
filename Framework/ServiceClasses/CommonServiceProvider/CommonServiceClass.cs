@@ -118,6 +118,13 @@ namespace XFS4IoTServer
         /// Stores CCPay capabilites
         /// </summary>
         public CCPayCapabilitiesClass CCPayCapabilities { get; set; } = null;
+
+        /// <summary>
+        /// Stores CashPay capabilites
+        /// </summary>
+        public CashPayCapabilitiesClass CashPayCapabilities { get; set; } = null;
+
+
         #endregion
 
         #region Device Status
@@ -205,7 +212,13 @@ namespace XFS4IoTServer
         /// Stores CCPay status
         /// </summary>
         public CCPayStatusClass CCPayStatus { get; set; } = null;
+
+        /// <summary>
+        /// Stores CashPay status
+        /// </summary>
+        public CashPayStatusClass CashPayStatus { get; set; } = null;
         #endregion
+
 
         public Task StatusChangedEvent(CommonStatusClass.DeviceEnum? Device,
                                        CommonStatusClass.PositionStatusEnum? Position,

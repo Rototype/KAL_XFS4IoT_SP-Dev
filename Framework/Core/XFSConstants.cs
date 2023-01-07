@@ -61,7 +61,8 @@ namespace XFS4IoT
             Biometric,
             Camera,
             CashAcceptor,
-            CCPay
+            CCPay,
+            CashPay
         }
 
         /// <summary>

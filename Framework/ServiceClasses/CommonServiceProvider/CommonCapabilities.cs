@@ -694,6 +694,35 @@ namespace XFS4IoTFramework.Common
             public List<CommandEnum> AuthenticationRequired { get; init; }
         }
 
+        public sealed class CashPayInterfaceClass
+        {
+            public enum CommandEnum
+            {
+                RequestPayment,
+                LoadCash,
+                EmptyCash,
+                Reset,
+            }
+
+            public enum EventEnum
+            {
+            }
+
+            public CashPayInterfaceClass(List<CommandEnum> Commands = null,
+                                       List<EventEnum> Events = null,
+                                       List<CommandEnum> AuthenticationRequired = null)
+            {
+                this.Commands = Commands;
+                this.Events = Events;
+                this.AuthenticationRequired = AuthenticationRequired;
+            }
+
+            public List<CommandEnum> Commands { get; init; }
+            public List<EventEnum> Events { get; init; }
+            public List<CommandEnum> AuthenticationRequired { get; init; }
+        }
+
+
 
         public CommonCapabilitiesClass(CommonInterfaceClass CommonInterface,
                                        CardReaderInterfaceClass CardReaderInterface = null,
@@ -714,6 +743,7 @@ namespace XFS4IoTFramework.Common
                                        BiometricInterfaceClass BiometricInterface = null,
                                        CashAcceptorInterfaceClass CashAcceptorInterface = null,
                                        CCPayInterfaceClass CCPayInterface = null,
+                                       CashPayInterfaceClass CashPayInterface = null,
                                        List<DeviceInformationClass> DeviceInformation = null, 
                                        bool? PowerSaveControl = null, 
                                        bool? AntiFraudModule = null,
