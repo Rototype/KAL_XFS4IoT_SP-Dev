@@ -47,9 +47,9 @@ namespace XFS4IoTFramework.Common
             FillLevel CoinHopper2 = FillLevel.Unknown,
             FillLevel CoinHopper3 = FillLevel.Unknown,
             FillLevel CoinHopper4 = FillLevel.Unknown,
-            CounterStatusClass[] NoteBinCounters = null,
-            CounterStatusClass[] NoteRecyclerCounters = null,
-            CounterStatusClass[] CoinHopperCounters = null
+            List<CounterStatusClass> NoteBinCounters = null,
+            List<CounterStatusClass> NoteRecyclerCounters = null,
+            List<CounterStatusClass> CoinHopperCounters = null
             )
         {
             this.AcceptCash = AcceptCash;
@@ -60,9 +60,12 @@ namespace XFS4IoTFramework.Common
             this.CoinHopper2 = CoinHopper2;
             this.CoinHopper3 = CoinHopper3;
             this.CoinHopper4 = CoinHopper4;
-            this.NoteBinCounters = NoteBinCounters;
-            this.NoteRecyclerCounters = NoteRecyclerCounters;
-            this.CoinHopperCounters = CoinHopperCounters;
+            if (NoteBinCounters != null) this.NoteBinCounters = NoteBinCounters;
+            else this.NoteBinCounters = new List<CounterStatusClass>();
+            if (NoteRecyclerCounters != null) this.NoteRecyclerCounters = NoteRecyclerCounters;
+            else this.NoteRecyclerCounters = new List<CounterStatusClass>();
+            if (CoinHopperCounters != null) this.CoinHopperCounters = CoinHopperCounters;
+            else this.CoinHopperCounters= new List<CounterStatusClass>();   
         }
 
         public Availability AcceptCash { get; set; }
@@ -76,8 +79,8 @@ namespace XFS4IoTFramework.Common
         public FillLevel CoinHopper4 { get; set; }
 
 
-        public CounterStatusClass[] NoteBinCounters { get; set; }
-        public CounterStatusClass[] NoteRecyclerCounters { get; set; }
-        public CounterStatusClass[] CoinHopperCounters { get; set; }
+        public List<CounterStatusClass> NoteBinCounters { get; set; }
+        public List<CounterStatusClass> NoteRecyclerCounters { get; set; }
+        public List<CounterStatusClass> CoinHopperCounters { get; set; }
     }
 }
