@@ -22,9 +22,9 @@ namespace XFS4IoT.CashPay
             FillLevel CoinHopper2 = FillLevel.Unknown,
             FillLevel CoinHopper3 = FillLevel.Unknown,
             FillLevel CoinHopper4 = FillLevel.Unknown,
-            CounterStatusClass[] NoteBinCounters = null,
-            CounterStatusClass[] NoteRecyclerCounters = null,
-            CounterStatusClass[] CoinHopperCounters = null
+            List<CounterStatusClass> NoteBinCounters = null,
+            List<CounterStatusClass> NoteRecyclerCounters = null,
+            List<CounterStatusClass> CoinHopperCounters = null
             )
         {
             this.AcceptCash = AcceptCash;
@@ -45,6 +45,14 @@ namespace XFS4IoT.CashPay
             public string Currency;
             public decimal Amount;
             public int Count;
+
+            public CounterStatusClass(string Currency, decimal Amount, int Count)
+            {
+                this.Currency = Currency;
+                this.Amount = Amount;
+                this.Count = Count;
+            }
+
         }
 
         public enum Availability
@@ -82,12 +90,12 @@ namespace XFS4IoT.CashPay
         public FillLevel CoinHopper4 { get; init; }
 
 
-        [DataMember(Name = "notBinCounters")]
-        public CounterStatusClass[] NoteBinCounters { get; init; }
+        [DataMember(Name = "noteBinCounters")]
+        public List<CounterStatusClass> NoteBinCounters { get; init; }
         [DataMember(Name = "noteRecyclerCounters")]
-        public CounterStatusClass[] NoteRecyclerCounters { get; init; }
+        public List<CounterStatusClass> NoteRecyclerCounters { get; init; }
         [DataMember(Name = "coinHopperCounters")]
-        public CounterStatusClass[] CoinHopperCounters { get; init; }
+        public List<CounterStatusClass> CoinHopperCounters { get; init; }
         
     }
 

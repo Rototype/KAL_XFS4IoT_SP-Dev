@@ -1084,6 +1084,97 @@ namespace XFS4IoTFramework.Common
                 });
             }
 
+            XFS4IoT.CashPay.StatusClass cashPay = null;
+            if (Common.CashPayStatus is not null)
+            {
+                cashPay = new XFS4IoT.CashPay.StatusClass(
+                    Common.CashPayStatus.AcceptCash switch
+                    {
+                        CashPayStatusClass.Availability.Unknown => XFS4IoT.CashPay.StatusClass.Availability.Unknown,
+                        CashPayStatusClass.Availability.Available => XFS4IoT.CashPay.StatusClass.Availability.Available,
+                        CashPayStatusClass.Availability.Unavailable => XFS4IoT.CashPay.StatusClass.Availability.Unavailable,
+                        _ => XFS4IoT.CashPay.StatusClass.Availability.Unknown,
+                    },
+                    Common.CashPayStatus.Change switch
+                    {
+                        CashPayStatusClass.Availability.Unknown => XFS4IoT.CashPay.StatusClass.Availability.Unknown,
+                        CashPayStatusClass.Availability.Available => XFS4IoT.CashPay.StatusClass.Availability.Available,
+                        CashPayStatusClass.Availability.Unavailable => XFS4IoT.CashPay.StatusClass.Availability.Unavailable,
+                        _ => XFS4IoT.CashPay.StatusClass.Availability.Unknown,
+                    },
+                    Common.CashPayStatus.NoteRecycler switch
+                    {
+                        CashPayStatusClass.FillLevel.Unknown => XFS4IoT.CashPay.StatusClass.FillLevel.Unknown,
+                        CashPayStatusClass.FillLevel.Normal => XFS4IoT.CashPay.StatusClass.FillLevel.Normal,
+                        CashPayStatusClass.FillLevel.Low => XFS4IoT.CashPay.StatusClass.FillLevel.Low,
+                        CashPayStatusClass.FillLevel.Empty => XFS4IoT.CashPay.StatusClass.FillLevel.Empty,
+                        CashPayStatusClass.FillLevel.Full => XFS4IoT.CashPay.StatusClass.FillLevel.Full,
+                        _ => XFS4IoT.CashPay.StatusClass.FillLevel.Unknown,
+                    },
+                    Common.CashPayStatus.NoteBin switch
+                    {
+                        CashPayStatusClass.FillLevel.Unknown => XFS4IoT.CashPay.StatusClass.FillLevel.Unknown,
+                        CashPayStatusClass.FillLevel.Normal => XFS4IoT.CashPay.StatusClass.FillLevel.Normal,
+                        CashPayStatusClass.FillLevel.Low => XFS4IoT.CashPay.StatusClass.FillLevel.Low,
+                        CashPayStatusClass.FillLevel.Empty => XFS4IoT.CashPay.StatusClass.FillLevel.Empty,
+                        CashPayStatusClass.FillLevel.Full => XFS4IoT.CashPay.StatusClass.FillLevel.Full,
+                        _ => XFS4IoT.CashPay.StatusClass.FillLevel.Unknown,
+                    },
+                    Common.CashPayStatus.CoinHopper1 switch
+                    {
+                        CashPayStatusClass.FillLevel.Unknown => XFS4IoT.CashPay.StatusClass.FillLevel.Unknown,
+                        CashPayStatusClass.FillLevel.Normal => XFS4IoT.CashPay.StatusClass.FillLevel.Normal,
+                        CashPayStatusClass.FillLevel.Low => XFS4IoT.CashPay.StatusClass.FillLevel.Low,
+                        CashPayStatusClass.FillLevel.Empty => XFS4IoT.CashPay.StatusClass.FillLevel.Empty,
+                        CashPayStatusClass.FillLevel.Full => XFS4IoT.CashPay.StatusClass.FillLevel.Full,
+                        _ => XFS4IoT.CashPay.StatusClass.FillLevel.Unknown,
+                    },
+                    Common.CashPayStatus.CoinHopper2 switch
+                    {
+                        CashPayStatusClass.FillLevel.Unknown => XFS4IoT.CashPay.StatusClass.FillLevel.Unknown,
+                        CashPayStatusClass.FillLevel.Normal => XFS4IoT.CashPay.StatusClass.FillLevel.Normal,
+                        CashPayStatusClass.FillLevel.Low => XFS4IoT.CashPay.StatusClass.FillLevel.Low,
+                        CashPayStatusClass.FillLevel.Empty => XFS4IoT.CashPay.StatusClass.FillLevel.Empty,
+                        CashPayStatusClass.FillLevel.Full => XFS4IoT.CashPay.StatusClass.FillLevel.Full,
+                        _ => XFS4IoT.CashPay.StatusClass.FillLevel.Unknown,
+                    },
+                    Common.CashPayStatus.CoinHopper3 switch
+                    {
+                        CashPayStatusClass.FillLevel.Unknown => XFS4IoT.CashPay.StatusClass.FillLevel.Unknown,
+                        CashPayStatusClass.FillLevel.Normal => XFS4IoT.CashPay.StatusClass.FillLevel.Normal,
+                        CashPayStatusClass.FillLevel.Low => XFS4IoT.CashPay.StatusClass.FillLevel.Low,
+                        CashPayStatusClass.FillLevel.Empty => XFS4IoT.CashPay.StatusClass.FillLevel.Empty,
+                        CashPayStatusClass.FillLevel.Full => XFS4IoT.CashPay.StatusClass.FillLevel.Full,
+                        _ => XFS4IoT.CashPay.StatusClass.FillLevel.Unknown,
+                    },
+                    Common.CashPayStatus.CoinHopper4 switch
+                    {
+                        CashPayStatusClass.FillLevel.Unknown => XFS4IoT.CashPay.StatusClass.FillLevel.Unknown,
+                        CashPayStatusClass.FillLevel.Normal => XFS4IoT.CashPay.StatusClass.FillLevel.Normal,
+                        CashPayStatusClass.FillLevel.Low => XFS4IoT.CashPay.StatusClass.FillLevel.Low,
+                        CashPayStatusClass.FillLevel.Empty => XFS4IoT.CashPay.StatusClass.FillLevel.Empty,
+                        CashPayStatusClass.FillLevel.Full => XFS4IoT.CashPay.StatusClass.FillLevel.Full,
+                        _ => XFS4IoT.CashPay.StatusClass.FillLevel.Unknown,
+                    },
+                    new List<XFS4IoT.CashPay.StatusClass.CounterStatusClass>(),
+                    new List<XFS4IoT.CashPay.StatusClass.CounterStatusClass>(),
+                    new List<XFS4IoT.CashPay.StatusClass.CounterStatusClass>()
+                );
+                foreach (var x in Common.CashPayStatus.NoteBinCounters)
+                {
+                    cashPay.NoteBinCounters.Add(new XFS4IoT.CashPay.StatusClass.CounterStatusClass(x.Currency,x.Amount,x.Count));
+                }
+                foreach (var x in Common.CashPayStatus.NoteRecyclerCounters)
+                {
+                    cashPay.NoteRecyclerCounters.Add(new XFS4IoT.CashPay.StatusClass.CounterStatusClass(x.Currency, x.Amount, x.Count));
+                }
+                foreach (var x in Common.CashPayStatus.CoinHopperCounters)
+                {
+                    cashPay.CoinHopperCounters.Add(new XFS4IoT.CashPay.StatusClass.CounterStatusClass(x.Currency, x.Amount, x.Count));
+                }
+
+            }
+
             return Task.FromResult(
                 new StatusCompletion.PayloadData(
                     MessagePayload.CompletionCodeEnum.Success,
@@ -1103,7 +1194,8 @@ namespace XFS4IoTFramework.Common
                     BarcodeReader: barcodeReader,
                     Biometric: biometric,
                     CashAcceptor: cashAcceptor,
-                    CCPay: ccPay)
+                    CCPay: ccPay,
+                    CashPay: cashPay)
                 );
         }
     }
