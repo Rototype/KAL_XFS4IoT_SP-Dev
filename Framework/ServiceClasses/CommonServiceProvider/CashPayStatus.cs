@@ -18,9 +18,9 @@ namespace XFS4IoTFramework.Common
     {
         public class CounterStatusClass
         {
-            public string Currency;
-            public decimal Amount;
-            public int Count;
+            public string Currency { get; set; }
+            public decimal Amount { get; set; }
+            public int Count { get; set; }
 
             public CounterStatusClass(string currency, decimal amount, int count)
             {
