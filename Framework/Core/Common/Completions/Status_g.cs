@@ -46,6 +46,7 @@ namespace XFS4IoT.Common.Completions
                 this.VendorMode = VendorMode;
                 this.VendorApplication = VendorApplication;
                 this.CCPay = CCPay;
+                this.CashPay = CashPay;
             }
 
             /// <summary>
