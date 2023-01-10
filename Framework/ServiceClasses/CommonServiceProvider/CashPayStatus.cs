@@ -21,6 +21,13 @@ namespace XFS4IoTFramework.Common
             public string Currency;
             public decimal Amount;
             public int Count;
+
+            public CounterStatusClass(string currency, decimal amount, int count)
+            {
+                Currency = currency;
+                Amount = amount;
+                Count = count;
+            }
         }
 
         public enum Availability
