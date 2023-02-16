@@ -22,7 +22,7 @@ namespace XFS4IoTFramework.CashPay
         private async Task<EmptyCashCompletion.PayloadData> HandleEmptyCash(IEmptyCashEvents events, EmptyCashCommand rqrev, CancellationToken cancel)
         {
         
-            if (rqrev.Payload.bin != "notes" && rqrev.Payload.bin != "1" && rqrev.Payload.bin != "2" && rqrev.Payload.bin != "3" && rqrev.Payload.bin != "4")
+            if (rqrev.Payload.bin != "notes" && rqrev.Payload.bin != "cashbin" && rqrev.Payload.bin != "1" && rqrev.Payload.bin != "2" && rqrev.Payload.bin != "3" && rqrev.Payload.bin != "4")
             {
                 return new EmptyCashCompletion.PayloadData(MessagePayload.CompletionCodeEnum.InvalidData,
                                                       $"Unsupported bin {rqrev.Payload.bin}");
